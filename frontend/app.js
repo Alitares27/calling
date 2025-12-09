@@ -21,12 +21,13 @@ async function loadAllPins() {
       const lat = parseFloat(loc.lat);
       const lon = parseFloat(loc.lon);
       const userNameDisplay = loc.user_name || 'Anónimo';
-      const popupContent = `<b>${loc.name}</b><br>Agregado por: ${userNameDisplay}<br><small>${new Date(loc.created_at).toLocaleString()}</small>`;
+      const popupContent = `<b>${loc.name}</b><br>${userNameDisplay}<br>`;
 
       L.marker([lat, lon])
         .addTo(markerGroup)
         .bindPopup(popupContent)
-        .openPopup(); 
+        .openPopup();
+
       centerLat += lat;
       centerLon += lon;
     });
@@ -38,8 +39,10 @@ async function loadAllPins() {
 }
 
 async function findAndSaveLocation() {
-  const locationName = document.getElementById('location-input').value;
-  const userName = document.getElementById('user-name-input').value;
+  const locationNameInput = document.getElementById('location-input');
+  const userNameInput = document.getElementById('user-name-input');
+  const locationName = locationNameInput.value;
+  const userName = userNameInput.value;
   const searchButton = document.querySelector('button');
 
   if (!locationName) {
@@ -62,7 +65,9 @@ async function findAndSaveLocation() {
     }
 
     await loadAllPins();
-    document.getElementById('location-input').value = '';
+
+    locationNameInput.value = '';
+    userNameInput.value = '';
   } catch (error) {
     alert(`Error: ${error.message}`);
   } finally {
