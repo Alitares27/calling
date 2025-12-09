@@ -11,19 +11,19 @@ router.get('/', (req, res) => {
 
 router.post('/api/locations', async (req, res) => {
   const { locationName, userName } = req.body;
-  if (!locationName) return res.status(400).send({ error: "Falta el nombre de la ubicación." });
+  if (!locationName) {
+    return res.status(400).send({ error: "Falta el nombre de la ubicación." });
+  }
 
   const geocodingUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`;
 
-  const response = await fetch(geocodingUrl, {
-    headers: {
-      'User-Agent': 'calling-app/1.0 (aldair2795@hotmail.com)'
-    }
-  });
-  const data = await response.json();
-
   try {
-    const response = await fetch(geocodingUrl);
+    const response = await fetch(geocodingUrl, {
+      headers: {
+        'User-Agent': 'calling-app/1.0 (aldair2795@hotmail.com)'
+      }
+    });
+
     const data = await response.json();
 
     if (data && data.length > 0) {
@@ -42,7 +42,7 @@ router.post('/api/locations', async (req, res) => {
       res.status(404).send({ error: `Ubicación no encontrada: ${locationName}` });
     }
   } catch (error) {
-    console.error('Error procesando geocodificación o DB:', error);
+    console.error('Error procesando geocodificación o DB:', error.message, error.stack);
     res.status(500).send({ error: "Error interno del servidor." });
   }
 });
@@ -54,7 +54,7 @@ router.get('/api/locations', async (req, res) => {
     );
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Error al obtener ubicaciones:', error);
+    console.error('Error al obtener ubicaciones:', error.message, error.stack);
     res.status(500).send({ error: "Error interno del servidor." });
   }
 });
