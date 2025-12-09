@@ -1,14 +1,16 @@
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
-const fetch = require('node-fetch');
+// Importar 'fetch' como CommonJS para compatibilidad con node-fetch@2.6.7
+const fetch = require('node-fetch'); 
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Configuración de Express y middlewares
-app.use(cors()); 
+app.use(cors()); // Importante para permitir la comunicación con el frontend
 app.use(express.json());
 
 // Configuración de la conexión a Neon (PostgreSQL)
@@ -23,7 +25,6 @@ const pool = new Pool({
 async function initDb() {
     try {
         const client = await pool.connect();
-        // SQL actualizado
         await client.query(`
             CREATE TABLE IF NOT EXISTS locations (
                 id SERIAL PRIMARY KEY,
@@ -37,20 +38,21 @@ async function initDb() {
         client.release();
         console.log("Tabla 'locations' verificada/creada exitosamente.");
     } catch (error) {
-        // Muestra el error de conexión en la terminal
         console.error("Error al inicializar la base de datos. ¿Está configurado .env? ", error);
     }
 }
 initDb();
 
-// Añadir esta ruta para manejar la raíz y evitar el error 404
+// --- RUTA RAIZ (Servir el HTML) ---
+// Modificado para servir index.html cuando se accede a la URL base de Vercel
 app.get('/', (req, res) => {
-    res.status(200).send("Servidor API de pines activo.");
+    // __dirname es la ruta absoluta del directorio actual (donde está server.js)
+    res.sendFile(path.join(__dirname, 'index.html')); 
 });
-
 
 // --- 1. Endpoint para Guardar Nueva Ubicación (POST) ---
 app.post('/api/locations', async (req, res) => {
+    // Extraer locationName y userName del cuerpo de la petición
     const { locationName, userName } = req.body; 
     
     if (!locationName) {
@@ -67,6 +69,7 @@ app.post('/api/locations', async (req, res) => {
         if (data && data.length > 0) {
             const { lat, lon, display_name } = data[0];
             
+            // Asignar 'Anónimo' si el usuario no proporcionó un nombre
             const nameToSave = userName && userName.trim() !== '' ? userName : 'Anónimo'; 
             
             // Guardar en Neon (PostgreSQL)
@@ -75,6 +78,7 @@ app.post('/api/locations', async (req, res) => {
                 VALUES ($1, $2, $3, $4)
                 RETURNING *;
             `;
+            // Pasamos nameToSave como $4
             const result = await pool.query(insertQuery, [display_name, lat, lon, nameToSave]);
             
             res.status(201).send(result.rows[0]);
@@ -90,6 +94,7 @@ app.post('/api/locations', async (req, res) => {
 // --- 2. Endpoint para Obtener Todos los Pines (GET) ---
 app.get('/api/locations', async (req, res) => {
     try {
+        // Seleccionar todos los campos necesarios, incluyendo user_name
         const result = await pool.query('SELECT name, lat, lon, user_name FROM locations ORDER BY created_at DESC');
         res.status(200).json(result.rows);
     } catch (error) {
