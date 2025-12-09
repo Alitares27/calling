@@ -26,7 +26,7 @@ async function loadAllPins() {
       L.marker([lat, lon])
         .addTo(markerGroup)
         .bindPopup(popupContent)
-        .openPopup(); // 👈 se abre automáticamente
+        .openPopup(); 
       centerLat += lat;
       centerLon += lon;
     });

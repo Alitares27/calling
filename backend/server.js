@@ -7,14 +7,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-// Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Usar rutas
 app.use('/', routes);
 
-// Para local
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
@@ -22,5 +17,4 @@ if (require.main === module) {
   });
 }
 
-// Para Vercel
 module.exports = app;

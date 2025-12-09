@@ -5,12 +5,10 @@ const pool = require('./db');
 
 const router = express.Router();
 
-// Ruta raíz: servir frontend
 router.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// POST: guardar ubicación
 router.post('/api/locations', async (req, res) => {
   const { locationName, userName } = req.body;
   if (!locationName) return res.status(400).send({ error: "Falta el nombre de la ubicación." });
@@ -42,7 +40,6 @@ router.post('/api/locations', async (req, res) => {
   }
 });
 
-// GET: obtener ubicaciones
 router.get('/api/locations', async (req, res) => {
   try {
     const result = await pool.query(
