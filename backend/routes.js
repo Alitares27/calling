@@ -15,6 +15,13 @@ router.post('/api/locations', async (req, res) => {
 
   const geocodingUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`;
 
+  const response = await fetch(geocodingUrl, {
+    headers: {
+      'User-Agent': 'calling-app/1.0 (aldair2795@hotmail.com)'
+    }
+  });
+  const data = await response.json();
+
   try {
     const response = await fetch(geocodingUrl);
     const data = await response.json();
