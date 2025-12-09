@@ -1,49 +1,17 @@
-// server.js
 const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
 const fetch = require('node-fetch');
 const path = require('path');
-require('dotenv').config();
+const pool = require('./db');
 
-const app = express();
+const router = express.Router();
 
-app.use(cors());
-app.use(express.json());
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // ⚠️ en Vercel suele necesitar false
+// Ruta raíz: servir frontend
+router.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Inicializar DB
-async function initDb() {
-  try {
-    const client = await pool.connect();
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS locations (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        lat NUMERIC(10, 7) NOT NULL,
-        lon NUMERIC(10, 7) NOT NULL,
-        user_name VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    client.release();
-    console.log("Tabla 'locations' lista.");
-  } catch (error) {
-    console.error("Error al inicializar DB:", error);
-  }
-}
-initDb();
-
-// Rutas
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.post('/api/locations', async (req, res) => {
+// POST: guardar ubicación
+router.post('/api/locations', async (req, res) => {
   const { locationName, userName } = req.body;
   if (!locationName) return res.status(400).send({ error: "Falta el nombre de la ubicación." });
 
@@ -60,7 +28,7 @@ app.post('/api/locations', async (req, res) => {
       const insertQuery = `
         INSERT INTO locations (name, lat, lon, user_name)
         VALUES ($1, $2, $3, $4)
-        RETURNING *;
+        RETURNING id, name, lat, lon, user_name, created_at;
       `;
       const result = await pool.query(insertQuery, [display_name, lat, lon, nameToSave]);
 
@@ -74,9 +42,12 @@ app.post('/api/locations', async (req, res) => {
   }
 });
 
-app.get('/api/locations', async (req, res) => {
+// GET: obtener ubicaciones
+router.get('/api/locations', async (req, res) => {
   try {
-    const result = await pool.query('SELECT name, lat, lon, user_name FROM locations ORDER BY created_at DESC');
+    const result = await pool.query(
+      'SELECT id, name, lat, lon, user_name, created_at FROM locations ORDER BY created_at DESC'
+    );
     res.status(200).json(result.rows);
   } catch (error) {
     console.error('Error al obtener ubicaciones:', error);
@@ -84,5 +55,4 @@ app.get('/api/locations', async (req, res) => {
   }
 });
 
-// 👇 Exporta el handler en lugar de app.listen
-module.exports = app;
+module.exports = router;
